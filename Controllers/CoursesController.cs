@@ -1,12 +1,13 @@
-﻿using CourseApp.DTOS;
+using CourseApp.DTOS;
 using CourseApp.Services;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CoursesController : ControllerBase
     {
         private readonly ICourseService _service;
@@ -16,6 +17,7 @@ namespace CourseApp.Controllers
             _service = service;
         }
 
+        // Any authenticated user can browse courses
         [HttpGet]
         public async Task<ActionResult<List<CourseResponseDto>>> GetAll()
             => Ok(await _service.GetAllAsync());
@@ -27,7 +29,9 @@ namespace CourseApp.Controllers
             return course == null ? NotFound() : Ok(course);
         }
 
+        // Only Admin and Instructor can create or update courses
         [HttpPost]
+        [Authorize(Roles = "Admin,Instructor")]
         public async Task<ActionResult<CourseResponseDto>> Create(CreateCourseDto dto)
         {
             var created = await _service.CreateAsync(dto);
@@ -35,13 +39,16 @@ namespace CourseApp.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Instructor")]
         public async Task<ActionResult<CourseResponseDto>> Update(int id, UpdateCourseDto dto)
         {
             var updated = await _service.UpdateAsync(id, dto);
             return updated == null ? NotFound() : Ok(updated);
         }
 
+        // Only Admin can delete courses
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Delete(int id)
         {
             var deleted = await _service.DeleteAsync(id);
